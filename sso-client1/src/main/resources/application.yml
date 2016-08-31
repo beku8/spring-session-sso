@@ -1,0 +1,12 @@
+spring:
+  profiles:
+    active: dev
+    
+server:
+  port: 9090
+  
+logging:
+  level:
+    org.springframework.security: 'DEBUG'
+    com.nomadays.sso: 'DEBUG'
+    com.nomadays.client1: 'DEBUG'
