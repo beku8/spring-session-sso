@@ -18,9 +18,15 @@ public class SsoAuthenticationEntryPoint implements AuthenticationEntryPoint {
 	@Override
 	public void commence(HttpServletRequest request, HttpServletResponse response,
 			AuthenticationException authException) throws IOException, ServletException {
-		
-		redirectStrategy.sendRedirect(request, response, "http://localhost:8080/confirmLogin?redirect=http://beku-laptop:9090/login_callback");
-
+		String scheme = request.getScheme();
+		String host = request.getServerName();
+		Integer port = request.getServerPort();
+		String callbackDomain = String.format("%s://%s", scheme, host);
+		if (port != 80) {
+			callbackDomain += ":" + port;
+		}
+		String loginDomain = "http://localhost:8080";
+		redirectStrategy.sendRedirect(request, response, String.format("%s/confirmLogin?redirect=%s/login_callback", loginDomain, callbackDomain));
 	}
 
 }
