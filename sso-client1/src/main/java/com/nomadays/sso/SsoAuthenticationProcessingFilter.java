@@ -44,10 +44,12 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 				logger.debug("session {}", securityContext.getAuthentication());
 				logger.debug("authentication manager {}", this.getAuthenticationManager());
 				
-				Long expiryInMilliSeconds = session.getCreationTime() + session.getMaxInactiveIntervalInSeconds() * 1000;
+				Long expiryInMilliSeconds = new Long(session.getMaxInactiveIntervalInSeconds()) * 1000 + session.getCreationTime();
+				logger.debug("created {}, maxAge {}", session.getCreationTime(), session.getMaxInactiveIntervalInSeconds());
+				logger.debug("expiryInMilliSeconds {}", expiryInMilliSeconds);
 				
 				
-				Long maxAge = (new Date().getTime() - expiryInMilliSeconds)/1000;
+				Long maxAge = (expiryInMilliSeconds - new Date().getTime())/1000;
 				logger.debug("maxAge {}", maxAge.toString());
 				Cookie cookie = new Cookie("SESSION", sessionId);
 				cookie.setMaxAge(Integer.parseInt(maxAge.toString()));
