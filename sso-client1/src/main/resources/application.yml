@@ -1,7 +1,9 @@
 spring:
   profiles:
     active: dev
-    
+  thymeleaf:
+    mode: LEGACYHTML5
+
 server:
   port: 9090
   

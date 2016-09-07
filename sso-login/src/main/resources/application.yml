@@ -1,0 +1,5 @@
+spring:
+  thymeleaf:
+    mode: LEGACYHTML5
+
+

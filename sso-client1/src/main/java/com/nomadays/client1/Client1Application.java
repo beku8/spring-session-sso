@@ -16,6 +16,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.Session;
 import org.springframework.session.SessionRepository;
@@ -96,8 +98,18 @@ public class Client1Application {
 					.authenticationEntryPoint(ssoAuthenticationEntryPoint())
 			.and()
 				.logout()
-				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
+				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+			.and()
+				.csrf()
+				.csrfTokenRepository(csrfTokenRepository());
 		}
+		
+		@Bean
+	    public CsrfTokenRepository csrfTokenRepository(){
+	    	CookieCsrfTokenRepository csrfTokenRepository = new CookieCsrfTokenRepository();
+	    	csrfTokenRepository.setCookieHttpOnly(false);
+	    	return csrfTokenRepository;
+	    }
 		
 	}
 	

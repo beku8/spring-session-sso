@@ -1,0 +1,20 @@
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>Demo page for testing CSRF</title>
+		<!-- Bootstrap core CSS -->
+		<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+  	<body>
+	  	<div class="container" th:unless="${success}">
+			<form th:action="@{/form}" method="post">
+				<button type="submit" class="btn btn-primary btn-lg btn-block">Click here to test CSRF</button>
+			</form>
+		</div>
+			
+		<div class="container"  th:if="${success}">
+	    	<div class="alert alert-success" role="alert">Form has been submitted successfully.</div>
+	    </div>
+	</body>
+</html>

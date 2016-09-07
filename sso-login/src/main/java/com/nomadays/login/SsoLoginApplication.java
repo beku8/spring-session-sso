@@ -9,6 +9,8 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.RememberMeServices;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.http.CookieSerializer;
@@ -21,7 +23,6 @@ import com.nomadays.sso.SpringSessionRememberMeServices;
 @SpringBootApplication
 @EnableRedisHttpSession
 @RestController
-//e3021e64-25cf-4f3e-9077-28f4aa910575
 public class SsoLoginApplication {
 
 	public static void main(String[] args) {
@@ -51,7 +52,10 @@ public class SsoLoginApplication {
 				.rememberMeServices(rememberMeServices())
 			.and()
 				.logout()
-				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"));
+				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+			.and()
+				.csrf()
+					.csrfTokenRepository(csrfTokenRepository());
 		}
 		
 		
@@ -65,6 +69,13 @@ public class SsoLoginApplication {
 			serializer.setCookieMaxAge(maxAge);
 			return serializer;
 		}
+		
+		@Bean
+	    public CsrfTokenRepository csrfTokenRepository(){
+	    	CookieCsrfTokenRepository csrfTokenRepository = new CookieCsrfTokenRepository();
+	    	csrfTokenRepository.setCookieHttpOnly(false);
+	    	return csrfTokenRepository;
+	    }
 		
 	}
 	
