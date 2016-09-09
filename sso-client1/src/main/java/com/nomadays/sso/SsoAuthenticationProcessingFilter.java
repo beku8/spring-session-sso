@@ -1,8 +1,17 @@
 package com.nomadays.sso;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Date;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -36,8 +45,9 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 			throws AuthenticationException, IOException, ServletException {
 		
 		
-		String sessionId = request.getParameter(TOKEN_PARAM);
-		if(sessionId != null){
+		String token = request.getParameter(TOKEN_PARAM);
+		if(token != null){
+			String sessionId = decodeAndDecrypt(token);
 			ExpiringSession session = sessionRepository.getSession(sessionId);
 			if(session != null){
 				SecurityContext securityContext = session.getAttribute("SPRING_SECURITY_CONTEXT");
@@ -58,6 +68,27 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 			}
 		}
 		 
+		return null;
+	}
+	
+	private String decodeAndDecrypt(String token){
+		try {
+			// decode
+			byte[] decoded = Base64.getUrlDecoder().decode(token);
+			
+			String key = "G~Y@86-FtH&gq'_e"; // 128 bit key, better be handled in external properties
+			// Create key and cipher
+			Key aesKey = new SecretKeySpec(key.getBytes(), "AES");
+			Cipher cipher = Cipher.getInstance("AES");
+			// Decrypt
+			cipher.init(Cipher.DECRYPT_MODE, aesKey);
+            String decrypted = new String(cipher.doFinal(decoded));
+            return decrypted;
+		
+		} catch (IllegalBlockSizeException | BadPaddingException | NoSuchAlgorithmException
+				| NoSuchPaddingException | InvalidKeyException e) {
+			
+		} 
 		return null;
 	}
 
