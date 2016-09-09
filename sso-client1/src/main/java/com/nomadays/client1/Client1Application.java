@@ -28,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.nomadays.sso.SsoAuthenticationEntryPoint;
 import com.nomadays.sso.SsoAuthenticationProcessingFilter;
-import com.nomadays.sso.SsoFilter;
 
 @SpringBootApplication
 @EnableRedisHttpSession
@@ -37,26 +36,6 @@ public class Client1Application {
 	
 	public static void main(String[] args) {
 		SpringApplication.run(Client1Application.class, args);
-	}
-	
-	@Bean
-	public FilterRegistrationBean ssoFilterBean(RedisOperationsSessionRepository sessionRepository) {
-		FilterRegistrationBean filter = new FilterRegistrationBean(ssoFilter(sessionRepository));
-		filter.setOrder(0);
-		return filter;
-	}
-	
-//	 @Bean
-//	    public FilterRegistrationBean securityFilterBean(@Qualifier(AbstractSecurityWebApplicationInitializer.DEFAULT_FILTER_NAME) Filter securityFilter){
-//	    	FilterRegistrationBean filter = new FilterRegistrationBean(securityFilter);
-//	    	filter.setOrder(2);
-//	    	filter.setName(AbstractSecurityWebApplicationInitializer.DEFAULT_FILTER_NAME);
-//	    	return filter; 
-//	    }
-	
-	@Bean
-	public SsoFilter ssoFilter(RedisOperationsSessionRepository sessionRepository){
-		return new SsoFilter(sessionRepository);
 	}
 	
 	@EnableWebSecurity
