@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.nomadays.sso.SpringSessionRememberMeServices;
+import com.nomadays.sso.SsoServerSettings;
 
 @SpringBootApplication
 @EnableRedisHttpSession
@@ -77,6 +78,11 @@ public class SsoLoginApplication {
 	    	return csrfTokenRepository;
 	    }
 		
+	}
+	
+	@Bean
+	public SsoServerSettings ssoServerSettings(){
+		return new SsoServerSettings();
 	}
 	
 	@RequestMapping

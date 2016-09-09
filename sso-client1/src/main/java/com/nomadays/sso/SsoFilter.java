@@ -43,6 +43,7 @@ public class SsoFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
+		
 		logger.debug("chaining filter");
 		if(matcher.matches(request)){
 			String token = request.getParameter("token");

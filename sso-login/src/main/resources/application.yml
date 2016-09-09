@@ -2,4 +2,8 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
 
-
+sso:
+  server:
+    allowed-uris:
+      - http://beku-laptop:9090
+      
