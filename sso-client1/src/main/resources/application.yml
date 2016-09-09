@@ -4,6 +4,8 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
 
+# Should be run the host different from localhost, so it doesn't share the cookie with login.
+# Should configure that host in the login server's  `allowed-uris` in application.yml
 server:
   port: 9090
   

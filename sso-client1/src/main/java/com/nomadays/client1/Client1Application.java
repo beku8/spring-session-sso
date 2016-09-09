@@ -1,12 +1,9 @@
 package com.nomadays.client1;
 
-import javax.servlet.Filter;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,12 +12,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.context.AbstractSecurityWebApplicationInitializer;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.session.Session;
-import org.springframework.session.SessionRepository;
 import org.springframework.session.data.redis.RedisOperationsSessionRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,17 +66,22 @@ public class Client1Application {
 			.authorizeRequests()
 				.anyRequest().hasAnyRole("USER")
 			.and()
-//				.formLogin()
 				.exceptionHandling()
 					.authenticationEntryPoint(ssoAuthenticationEntryPoint())
 			.and()
 				.logout()
 				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
 			.and()
+				// this part is not required for SSO.
 				.csrf()
 				.csrfTokenRepository(csrfTokenRepository());
 		}
 		
+		/**
+		 * We need CookieCsrfTokenRepository, so it doesn't expire at all.
+		 * You could probably need csrf configuration, this part is not required for SSO.
+		 * @return
+		 */
 		@Bean
 	    public CsrfTokenRepository csrfTokenRepository(){
 	    	CookieCsrfTokenRepository csrfTokenRepository = new CookieCsrfTokenRepository();

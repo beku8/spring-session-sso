@@ -1,4 +1,4 @@
-package com.nomadays.login;
+package com.nomadays.sso;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -23,8 +23,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nomadays.sso.SsoServerSettings;
-
+/**
+ * SSO point for client applications.
+ * @author beku
+ *
+ */
 @RestController
 public class ConfirmLoginController {
 	
@@ -32,9 +35,10 @@ public class ConfirmLoginController {
 	
 	private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 
-	@RequestMapping("/confirmLogin")
+	@RequestMapping("/confirm_login")
 	public void getSession(HttpSession session, @RequestParam("redirect") String redirect,
 				HttpServletRequest request, HttpServletResponse response) throws IOException {
+		// this is the crucial security config. Only registered URIs should be allowed.
 		if (ssoServerSettings.allow(redirect)) {
 			redirectStrategy.sendRedirect(request, response, redirect + "?token=" + encryptAndEncode(session.getId()));
 		}
@@ -44,7 +48,7 @@ public class ConfirmLoginController {
 		
 	}
 	
-	
+	// this is an additional security point to encrypt and decrypt the session id.
 	private String encryptAndEncode(String token){
 		try {
 			 String key = "G~Y@86-FtH&gq'_e"; // 128 bit key, better be handled in external properties

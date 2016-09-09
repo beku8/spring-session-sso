@@ -27,6 +27,16 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.ExpiringSession;
 import org.springframework.session.SessionRepository;
 
+/**
+ * Filter to ensure the authentication.
+ * Registers on /login_callback url, and checks the returned token from Login server.
+ * if the Session is valid and exists, it simply sets the 'SESSION' cookie same as the login server & returns the authentication.
+ * 
+ * Must configure it to replace UsernamePasswordAuthenticationFilter, since we don't need form login.
+ * 
+ * @author beku
+ *
+ */
 public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 	
 	private Logger logger = LoggerFactory.getLogger(getClass());
@@ -50,17 +60,11 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 			String sessionId = decodeAndDecrypt(token);
 			ExpiringSession session = sessionRepository.getSession(sessionId);
 			if(session != null){
+				logger.debug("found valid session {}", session);
 				SecurityContext securityContext = session.getAttribute("SPRING_SECURITY_CONTEXT");
-				logger.debug("session {}", securityContext.getAuthentication());
-				logger.debug("authentication manager {}", this.getAuthenticationManager());
-				
 				Long expiryInMilliSeconds = new Long(session.getMaxInactiveIntervalInSeconds()) * 1000 + session.getCreationTime();
-				logger.debug("created {}, maxAge {}", session.getCreationTime(), session.getMaxInactiveIntervalInSeconds());
-				logger.debug("expiryInMilliSeconds {}", expiryInMilliSeconds);
-				
-				
 				Long maxAge = (expiryInMilliSeconds - new Date().getTime())/1000;
-				logger.debug("maxAge {}", maxAge.toString());
+				
 				Cookie cookie = new Cookie("SESSION", sessionId);
 				cookie.setMaxAge(Integer.parseInt(maxAge.toString()));
 				response.addCookie(cookie);

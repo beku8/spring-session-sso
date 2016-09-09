@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
@@ -18,9 +17,19 @@ import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nomadays.sso.ConfirmLoginController;
 import com.nomadays.sso.SpringSessionRememberMeServices;
 import com.nomadays.sso.SsoServerSettings;
 
+/**
+ * 
+ * This is just a regular Spring Session configuration, with custom RememberMe behaviour.
+ * 
+ * Only {@link ConfirmLoginController} is the additional configuration for SSO.
+ * 
+ * @author beku
+ *
+ */
 @SpringBootApplication
 @EnableRedisHttpSession
 @RestController
@@ -34,7 +43,7 @@ public class SsoLoginApplication {
 	@Configuration
 	public static class SecurityConfig extends WebSecurityConfigurerAdapter {
 		
-		private int maxAge = 60 * 60 * 24 * 30;
+		private int maxAge = 60 * 60 * 24 * 30; // configuring it to be 30 days
 
 		@Override
 		protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -50,18 +59,13 @@ public class SsoLoginApplication {
 				.formLogin()
 			.and()
 				.rememberMe()
-				.rememberMeServices(rememberMeServices())
+				.rememberMeServices(new SpringSessionRememberMeServices(maxAge))
 			.and()
 				.logout()
 				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
 			.and()
 				.csrf()
 					.csrfTokenRepository(csrfTokenRepository());
-		}
-		
-		
-		public RememberMeServices rememberMeServices(){
-			return new SpringSessionRememberMeServices(maxAge);
 		}
 		
 		@Bean
@@ -78,6 +82,11 @@ public class SsoLoginApplication {
 	    	return csrfTokenRepository;
 	    }
 		
+	}
+	
+	@Bean
+	public ConfirmLoginController confirmLoginController() {
+		return new ConfirmLoginController();
 	}
 	
 	@Bean

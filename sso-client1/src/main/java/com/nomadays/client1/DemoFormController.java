@@ -5,6 +5,12 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+/**
+ * 
+ * Just regular controller to ensure that CSRF token is working properly.
+ * @author beku
+ *
+ */
 @Controller
 @RequestMapping("/form")
 public class DemoFormController {
