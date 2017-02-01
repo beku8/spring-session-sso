@@ -1,5 +1,7 @@
 package com.nomadays.client1;
 
+import java.util.ArrayList;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
@@ -14,11 +16,16 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.data.redis.RedisOperationsSessionRepository;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.SsoAuthenticationEntryPoint;
 import com.nomadays.sso.SsoAuthenticationProcessingFilter;
@@ -49,7 +56,7 @@ public class Client1Application {
 		
 		@Bean
 		public SsoAuthenticationProcessingFilter ssoAuthenticationProcessingFilter(){
-			SsoAuthenticationProcessingFilter filter = new SsoAuthenticationProcessingFilter(sessionRepository);
+			SsoAuthenticationProcessingFilter filter = new SsoAuthenticationProcessingFilter(sessionRepository, requestCache());
 			filter.setAuthenticationManager(authenticationManager);
 			return filter;
 		}
@@ -64,6 +71,7 @@ public class Client1Application {
 			http
 			.addFilterAt(ssoAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
 			.authorizeRequests()
+				.antMatchers("/free").permitAll()
 				.anyRequest().hasAnyRole("USER")
 			.and()
 				.exceptionHandling()
@@ -74,7 +82,8 @@ public class Client1Application {
 			.and()
 				// this part is not required for SSO.
 				.csrf()
-				.csrfTokenRepository(csrfTokenRepository());
+				.csrfTokenRepository(csrfTokenRepository())
+			.and().requestCache().requestCache(requestCache());
 		}
 		
 		/**
@@ -89,10 +98,33 @@ public class Client1Application {
 	    	return csrfTokenRepository;
 	    }
 		
+		@Bean
+		public RequestCache requestCache(){
+			return new CustomRequestCache();
+		}
+		
+		public static class CustomRequestCache extends HttpSessionRequestCache {
+
+			@Override
+			public void setRequestMatcher(RequestMatcher requestMatcher) {
+				List<RequestMatcher> matchers = new ArrayList<>();
+				
+				matchers.add(new AntPathRequestMatcher("/form", "POST"));
+				matchers.add(requestMatcher);
+				
+				super.setRequestMatcher(new OrRequestMatcher(matchers));
+			}
+		}
+		
 	}
 	
 	@RequestMapping
 	public String hello(){
 		return "hello";
+	}
+	
+	@RequestMapping("/free")
+	public ModelAndView free(){
+		return new ModelAndView("free");
 	}
 }

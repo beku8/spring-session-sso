@@ -2,6 +2,10 @@ spring:
   thymeleaf:
     mode: LEGACYHTML5
 
+logging:
+  level:
+     org.springframework.security: 'DEBUG'
+
 sso:
   server:
     allowed-uris:

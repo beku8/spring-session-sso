@@ -1,5 +1,8 @@
 package com.nomadays.login;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
@@ -10,12 +13,17 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.ConfirmLoginController;
 import com.nomadays.sso.SpringSessionRememberMeServices;
@@ -54,6 +62,7 @@ public class SsoLoginApplication {
 		protected void configure(HttpSecurity http) throws Exception {
 			http
 			.authorizeRequests()
+				.antMatchers("/free").permitAll()
 				.anyRequest().hasAnyRole("USER")
 			.and()
 				.formLogin()
@@ -65,7 +74,8 @@ public class SsoLoginApplication {
 				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
 			.and()
 				.csrf()
-					.csrfTokenRepository(csrfTokenRepository());
+					.csrfTokenRepository(csrfTokenRepository())
+			.and().requestCache().requestCache(requestCache());
 		}
 		
 		@Bean
@@ -82,7 +92,27 @@ public class SsoLoginApplication {
 	    	return csrfTokenRepository;
 	    }
 		
+		@Bean
+		public RequestCache requestCache(){
+			return new CustomRequestCache();
+		}
+		
+		public static class CustomRequestCache extends HttpSessionRequestCache {
+
+			@Override
+			public void setRequestMatcher(RequestMatcher requestMatcher) {
+				List<RequestMatcher> matchers = new ArrayList<>();
+				
+				matchers.add(new AntPathRequestMatcher("/form", "POST"));
+				matchers.add(requestMatcher);
+				
+				super.setRequestMatcher(new OrRequestMatcher(matchers));
+			}
+		}
+		
 	}
+	
+
 	
 	@Bean
 	public ConfirmLoginController confirmLoginController() {
@@ -97,5 +127,10 @@ public class SsoLoginApplication {
 	@RequestMapping
 	public String hello(){
 		return "hello";
+	}
+	
+	@RequestMapping("/free")
+	public ModelAndView free(){
+		return new ModelAndView("free");
 	}
 }

@@ -23,6 +23,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.authentication.AbstractAuthenticationProcessingFilter;
+import org.springframework.security.web.savedrequest.RequestCache;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.ExpiringSession;
 import org.springframework.session.SessionRepository;
@@ -41,20 +43,20 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 	
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private SessionRepository<ExpiringSession> sessionRepository;
+	private RequestCache requestCache;
 	
 	public final String TOKEN_PARAM = "token";
 
 	@SuppressWarnings("unchecked")
-	public <S extends ExpiringSession> SsoAuthenticationProcessingFilter(SessionRepository<S> sessionRepository) {
+	public <S extends ExpiringSession> SsoAuthenticationProcessingFilter(SessionRepository<S> sessionRepository, RequestCache requestCache) {
 		super(new AntPathRequestMatcher("/login_callback"));
 		this.sessionRepository = (SessionRepository<ExpiringSession>) sessionRepository;
+		this.requestCache = requestCache;
 	}
 
 	@Override
 	public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
 			throws AuthenticationException, IOException, ServletException {
-		
-		
 		String token = request.getParameter(TOKEN_PARAM);
 		if(token != null){
 			String sessionId = decodeAndDecrypt(token);
@@ -62,12 +64,20 @@ public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationPro
 			if(session != null){
 				logger.debug("found valid session {}", session);
 				SecurityContext securityContext = session.getAttribute("SPRING_SECURITY_CONTEXT");
+				
 				Long expiryInMilliSeconds = new Long(session.getMaxInactiveIntervalInSeconds()) * 1000 + session.getCreationTime();
 				Long maxAge = (expiryInMilliSeconds - new Date().getTime())/1000;
-				
 				Cookie cookie = new Cookie("SESSION", sessionId);
 				cookie.setMaxAge(Integer.parseInt(maxAge.toString()));
 				response.addCookie(cookie);
+				
+				SavedRequest savedRequest = requestCache.getRequest(request, response);
+				if (savedRequest != null) {
+					logger.debug("re-enforcing cached request at {} {}", savedRequest.getRedirectUrl(), savedRequest.getMethod());
+					// inspired from HttpSessionRequestCache
+					session.setAttribute("SPRING_SECURITY_SAVED_REQUEST", savedRequest);
+					sessionRepository.save(session);
+				} 
 				return securityContext.getAuthentication();
 			}
 		}
