@@ -1,0 +1,16 @@
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>Free page for all</title>
+		<!-- Bootstrap core CSS -->
+		<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	</head>
+  	<body>
+	  	<div class="container">
+			<form th:action="@{/form}" method="post">
+				<button type="submit" class="btn btn-primary btn-lg btn-block">Click here to post to secure URL</button>
+			</form>
+		</div>
+	</body>
+</html>
