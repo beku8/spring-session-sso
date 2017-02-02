@@ -10,7 +10,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -26,12 +25,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 public class SsoClientLoginFilter extends OncePerRequestFilter {
 	
-	private AuthenticationEntryPoint authenticationEntryPoint;
+	private SsoAuthenticationEntryPoint authenticationEntryPoint;
 	
 	// /login causes issues. So needs to use different path instead
 	private RequestMatcher requestMatcher = new AntPathRequestMatcher("/sso-login");
 
-	public SsoClientLoginFilter(AuthenticationEntryPoint authenticationEntryPoint) {
+	public SsoClientLoginFilter(SsoAuthenticationEntryPoint authenticationEntryPoint) {
 		this.authenticationEntryPoint = authenticationEntryPoint;
 	}
 
