@@ -29,6 +29,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.SsoAuthenticationEntryPoint;
 import com.nomadays.sso.SsoAuthenticationProcessingFilter;
+import com.nomadays.sso.SsoClientLoginFilter;
 
 @SpringBootApplication
 @EnableRedisHttpSession
@@ -55,6 +56,11 @@ public class Client1Application {
 		}
 		
 		@Bean
+		public SsoClientLoginFilter ssoClientLoginFilter(){
+			return new SsoClientLoginFilter(ssoAuthenticationEntryPoint());
+		}
+		
+		@Bean
 		public SsoAuthenticationProcessingFilter ssoAuthenticationProcessingFilter(){
 			SsoAuthenticationProcessingFilter filter = new SsoAuthenticationProcessingFilter(sessionRepository, requestCache());
 			filter.setAuthenticationManager(authenticationManager);
@@ -70,6 +76,7 @@ public class Client1Application {
 		protected void configure(HttpSecurity http) throws Exception {
 			http
 			.addFilterAt(ssoAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
+			.addFilterBefore(ssoClientLoginFilter(), SsoAuthenticationProcessingFilter.class)
 			.authorizeRequests()
 				.antMatchers("/free").permitAll()
 				.anyRequest().hasAnyRole("USER")
