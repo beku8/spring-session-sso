@@ -8,12 +8,11 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -28,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.SsoAuthenticationEntryPoint;
-import com.nomadays.sso.SsoAuthenticationProcessingFilter;
+import com.nomadays.sso.SsoClientLoginCallbackFilter;
 import com.nomadays.sso.SsoClientLoginFilter;
 
 @SpringBootApplication
@@ -47,9 +46,6 @@ public class Client1Application {
 		@Autowired
 		private RedisOperationsSessionRepository sessionRepository;
 		
-		@Autowired
-		private AuthenticationManager authenticationManager;
-		
 		@Bean
 		public SsoAuthenticationEntryPoint ssoAuthenticationEntryPoint(){
 			return new SsoAuthenticationEntryPoint();
@@ -61,10 +57,8 @@ public class Client1Application {
 		}
 		
 		@Bean
-		public SsoAuthenticationProcessingFilter ssoAuthenticationProcessingFilter(){
-			SsoAuthenticationProcessingFilter filter = new SsoAuthenticationProcessingFilter(sessionRepository, requestCache());
-			filter.setAuthenticationManager(authenticationManager);
-			return filter;
+		public SsoClientLoginCallbackFilter ssoClientLoginCallbackFilter(){
+			return new SsoClientLoginCallbackFilter(sessionRepository, requestCache());
 		}
 
 		@Override
@@ -75,8 +69,8 @@ public class Client1Application {
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			http
-			.addFilterAt(ssoAuthenticationProcessingFilter(), UsernamePasswordAuthenticationFilter.class)
-			.addFilterBefore(ssoClientLoginFilter(), SsoAuthenticationProcessingFilter.class)
+			.addFilterBefore(ssoClientLoginCallbackFilter(), WebAsyncManagerIntegrationFilter.class)
+			.addFilterAfter(ssoClientLoginFilter(), SsoClientLoginCallbackFilter.class)
 			.authorizeRequests()
 				.antMatchers("/free").permitAll()
 				.anyRequest().hasAnyRole("USER")

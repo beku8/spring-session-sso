@@ -37,8 +37,11 @@ import org.springframework.session.SessionRepository;
  * Must configure it to replace UsernamePasswordAuthenticationFilter, since we don't need form login.
  * 
  * @author beku
+ * 
+ * @deprecated use {@link SsoClientLoginCallbackFilter} instead.
  *
  */
+@Deprecated
 public class SsoAuthenticationProcessingFilter extends AbstractAuthenticationProcessingFilter {
 	
 	private Logger logger = LoggerFactory.getLogger(getClass());
