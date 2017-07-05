@@ -14,6 +14,11 @@
 	</parent>
 
 	<dependencies>
+	    <dependency>
+		    <groupId>org.springframework.boot</groupId>
+		    <artifactId>spring-boot-devtools</artifactId>
+		    <optional>true</optional>
+	    </dependency>
 		<dependency>
 	        <groupId>org.springframework.boot</groupId>
 	        <artifactId>spring-boot-starter-web</artifactId>
@@ -39,6 +44,11 @@
 	        <groupId>org.springframework.boot</groupId>
 	        <artifactId>spring-boot-starter-thymeleaf</artifactId>
 	    </dependency>
+	   	<dependency>
+	    	<groupId>org.thymeleaf.extras</groupId>
+	    	<artifactId>thymeleaf-extras-springsecurity4</artifactId>
+	    </dependency>
+	    
 	    <dependency>
 	        <groupId>net.sourceforge.nekohtml</groupId>
 	        <artifactId>nekohtml</artifactId>

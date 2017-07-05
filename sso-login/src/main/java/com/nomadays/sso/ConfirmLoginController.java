@@ -49,7 +49,7 @@ public class ConfirmLoginController {
 	}
 	
 	// this is an additional security point to encrypt and decrypt the session id.
-	private String encryptAndEncode(String token){
+	public static String encryptAndEncode(String token){
 		try {
 			 String key = "G~Y@86-FtH&gq'_e"; // 128 bit key, better be handled in external properties
 	         // Create key and cipher

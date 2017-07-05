@@ -1,7 +1,5 @@
 package com.nomadays.login;
 
-import java.util.ArrayList;
-import java.util.List;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,13 +9,14 @@ import org.springframework.security.config.annotation.authentication.builders.Au
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.OrRequestMatcher;
-import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
@@ -26,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.ConfirmLoginController;
+import com.nomadays.sso.ConfirmSessionFilter;
 import com.nomadays.sso.SpringSessionRememberMeServices;
 import com.nomadays.sso.SsoServerSettings;
 
@@ -61,8 +61,9 @@ public class SsoLoginApplication {
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			http
+			.addFilterAfter(confirmSessionFilter(), AnonymousAuthenticationFilter.class)
 			.authorizeRequests()
-				.antMatchers("/free").permitAll()
+				.antMatchers("/free", "/me").permitAll()
 				.anyRequest().hasAnyRole("USER")
 			.and()
 				.formLogin()
@@ -75,7 +76,9 @@ public class SsoLoginApplication {
 			.and()
 				.csrf()
 					.csrfTokenRepository(csrfTokenRepository())
-			.and().requestCache().requestCache(requestCache());
+			.and().requestCache().requestCache(requestCache())
+			// to support savedRequest for client apps.
+			.and().sessionManagement().sessionFixation().migrateSession();
 		}
 		
 		@Bean
@@ -94,35 +97,31 @@ public class SsoLoginApplication {
 		
 		@Bean
 		public RequestCache requestCache(){
-			return new CustomRequestCache();
+			return new HttpSessionRequestCache();
 		}
 		
-		public static class CustomRequestCache extends HttpSessionRequestCache {
-
-			@Override
-			public void setRequestMatcher(RequestMatcher requestMatcher) {
-				List<RequestMatcher> matchers = new ArrayList<>();
-				
-				matchers.add(new AntPathRequestMatcher("/form", "POST"));
-				matchers.add(requestMatcher);
-				
-				super.setRequestMatcher(new OrRequestMatcher(matchers));
-			}
+		@Bean
+		public ConfirmSessionFilter confirmSessionFilter() {
+		  ConfirmSessionFilter confirmSessionFilter =new ConfirmSessionFilter(ssoServerSettings());
+		  confirmSessionFilter.setValiditySeconds(maxAge);
+		  return confirmSessionFilter;
 		}
 		
+
+		
+	  @Bean
+	  public SsoServerSettings ssoServerSettings(){
+	    return new SsoServerSettings();
+	  }
+		
 	}
+
+	@Bean
+  public ConfirmLoginController confirmLoginController() {
+    return new ConfirmLoginController();
+  }
 	
 
-	
-	@Bean
-	public ConfirmLoginController confirmLoginController() {
-		return new ConfirmLoginController();
-	}
-	
-	@Bean
-	public SsoServerSettings ssoServerSettings(){
-		return new SsoServerSettings();
-	}
 	
 	@RequestMapping
 	public String hello(){
@@ -133,4 +132,10 @@ public class SsoLoginApplication {
 	public ModelAndView free(){
 		return new ModelAndView("free");
 	}
+	
+  @RequestMapping("/me")
+  public Object me() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    return authentication.getPrincipal();
+  }
 }

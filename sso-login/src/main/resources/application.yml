@@ -5,6 +5,7 @@ spring:
 logging:
   level:
      org.springframework.security: 'DEBUG'
+     com.nomadays.sso: 'DEBUG'
 
 sso:
   server:

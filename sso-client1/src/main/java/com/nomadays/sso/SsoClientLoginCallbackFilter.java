@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
-import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -41,54 +40,79 @@ import org.springframework.web.filter.OncePerRequestFilter;
  */
 public class SsoClientLoginCallbackFilter extends OncePerRequestFilter {
 	
-	public final String TOKEN_PARAM = "token";
+	public final static String TOKEN_PARAM = "token";
 	private String defaultTargetUrl = "/";
 	
 	private SessionRepository<ExpiringSession> sessionRepository;
-	private RequestCache requestCache;
 	
 	private Logger logger = LoggerFactory.getLogger(getClass());
 	private RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
-	private RequestMatcher requestMatcher = new AntPathRequestMatcher("/login_callback");
+	private RequestMatcher loginRequestMatcher = new AntPathRequestMatcher("/login_callback");
+	private RequestMatcher sessionRequestMatcher = new AntPathRequestMatcher("/session_callback");
+	private String savedRequestAttr = "SPRING_SECURITY_SAVED_REQUEST";
 	
 	@SuppressWarnings("unchecked")
-	public <S extends ExpiringSession> SsoClientLoginCallbackFilter(SessionRepository<S> sessionRepository, RequestCache requestCache) {
+	public <S extends ExpiringSession> SsoClientLoginCallbackFilter(SessionRepository<S> sessionRepository) {
 		this.sessionRepository = (SessionRepository<ExpiringSession>) sessionRepository;
-		this.requestCache = requestCache;
 	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		if (requestMatcher.matches(request)) {
-			String token = request.getParameter(TOKEN_PARAM);
-			if(token != null){
-				String sessionId = decodeAndDecrypt(token);
-				ExpiringSession session = sessionRepository.getSession(sessionId);
-				SecurityContext securityContext = session.getAttribute("SPRING_SECURITY_CONTEXT");
-				if(session != null && securityContext.getAuthentication().isAuthenticated()){
-					logger.debug("found valid session {}", session);
-					Long expiryInMilliSeconds = new Long(session.getMaxInactiveIntervalInSeconds()) * 1000 + session.getCreationTime();
-					Long maxAge = (expiryInMilliSeconds - new Date().getTime())/1000;
-					Cookie cookie = new Cookie("SESSION", sessionId);
-					cookie.setMaxAge(Integer.parseInt(maxAge.toString()));
-					response.addCookie(cookie);
-					
-					String targetUrl = defaultTargetUrl;
-					SavedRequest savedRequest = requestCache.getRequest(request, response);
-					if (savedRequest != null) {
-						logger.debug("re-enforcing cached request at {} {}", savedRequest.getRedirectUrl(), savedRequest.getMethod());
-						// inspired from HttpSessionRequestCache
-						session.setAttribute("SPRING_SECURITY_SAVED_REQUEST", savedRequest);
-						sessionRepository.save(session);
-						targetUrl = savedRequest.getRedirectUrl();
-					} 
-					redirectStrategy.sendRedirect(request, response, targetUrl);
-					return;
-				}
-			}
+	  Boolean shouldFilter = true;
+		if (loginRequestMatcher.matches(request)) {
+		  shouldFilter = this.filterLoginCallback(request, response);
+		} else if (sessionRequestMatcher.matches(request)) {
+		  shouldFilter = this.filterSessionCallback(request, response);
 		}
-		filterChain.doFilter(request, response);
+    if (shouldFilter) {
+      filterChain.doFilter(request, response);
+    }
+	}
+	
+	private Boolean filterLoginCallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String token = request.getParameter(TOKEN_PARAM);
+    if(token != null){
+      String sessionId = decodeAndDecrypt(token);
+      ExpiringSession session = sessionRepository.getSession(sessionId);
+      SecurityContext securityContext = session.getAttribute("SPRING_SECURITY_CONTEXT");
+      if(session != null && securityContext.getAuthentication().isAuthenticated()) {
+        logger.debug("found valid session {}", session);
+        writeSessionCookie(session, response);
+        
+        String targetUrl = defaultTargetUrl;
+        SavedRequest savedRequest = session.getAttribute(this.savedRequestAttr);
+//        SavedRequest savedRequest = requestCache.getRequest(request, response);
+        
+        if (savedRequest != null) {
+          logger.debug("re-enforcing cached request at {} {}", savedRequest.getRedirectUrl(), savedRequest.getMethod());
+//          session.setAttribute(this.savedRequestAttr, savedRequest); 
+//          sessionRepository.save(session);
+          targetUrl = savedRequest.getRedirectUrl();
+        } 
+        redirectStrategy.sendRedirect(request, response, targetUrl);
+        return false;
+      }
+    }
+    return true;
+	}
+	
+	private Boolean filterSessionCallback(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String token = request.getParameter(TOKEN_PARAM);
+    if(token != null){
+      String sessionId = decodeAndDecrypt(token);
+      ExpiringSession session = sessionRepository.getSession(sessionId);
+      if(session != null){
+        logger.debug("found valid session {}", session);
+        writeSessionCookie(session, response);
+
+        String targetUrl = request.getParameter("redirect");
+        logger.debug("redirecting to original url {}", targetUrl);
+        redirectStrategy.sendRedirect(request, response, targetUrl);
+        return false;
+      }
+    }
+    return true;
 	}
 	
 	private String decodeAndDecrypt(String token){
@@ -111,5 +135,22 @@ public class SsoClientLoginCallbackFilter extends OncePerRequestFilter {
 		} 
 		return null;
 	}
+	
+	private void writeSessionCookie(ExpiringSession session, HttpServletResponse response) {
+	  Long expiryInMilliSeconds = new Long(session.getMaxInactiveIntervalInSeconds()) * 1000 + session.getCreationTime();
+    Long maxAge = (expiryInMilliSeconds - new Date().getTime())/1000;
+    Cookie cookie = new Cookie("SESSION", session.getId());
+    cookie.setMaxAge(Integer.parseInt(maxAge.toString()));
+    response.addCookie(cookie);
+	}
 
+  public String getSavedRequestAttr() {
+    return savedRequestAttr;
+  }
+
+  public void setSavedRequestAttr(String savedRequestAttr) {
+    this.savedRequestAttr = savedRequestAttr;
+  }
+
+	
 }

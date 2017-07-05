@@ -1,4 +1,5 @@
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
 	<head>
 		<meta charset="utf-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -7,6 +8,16 @@
 		<link href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
 	</head>
   	<body>
+  		<div sec:authorize="hasRole('ROLE_USER')">
+    		<h1 th:inline="text">Hello [[${#httpServletRequest.remoteUser}]]!</h1>
+	        <form th:action="@{/logout}" method="post">
+	            <input type="submit" value="Sign Out"/>
+	        </form>
+    	</div>
+    	<div sec:authorize="isAnonymous()">
+    		<h1 th:inline="text">Welcome</h1>
+    		<a href="/login">Sign in</a>
+    	</div>
 	  	<div class="container">
 			<form th:action="@{/form}" method="post">
 				<button type="submit" class="btn btn-primary btn-lg btn-block">Click here to post to secure URL</button>
