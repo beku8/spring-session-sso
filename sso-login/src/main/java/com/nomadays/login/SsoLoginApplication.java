@@ -18,6 +18,7 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
+import org.springframework.session.security.web.authentication.SpringSessionRememberMeServices;
 import org.springframework.session.web.http.CookieSerializer;
 import org.springframework.session.web.http.DefaultCookieSerializer;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +27,6 @@ import org.springframework.web.servlet.ModelAndView;
 
 import com.nomadays.sso.ConfirmLoginController;
 import com.nomadays.sso.ConfirmSessionFilter;
-import com.nomadays.sso.SpringSessionRememberMeServices;
 import com.nomadays.sso.SsoServerSettings;
 
 /**
@@ -69,7 +69,7 @@ public class SsoLoginApplication {
 				.formLogin()
 			.and()
 				.rememberMe()
-				.rememberMeServices(new SpringSessionRememberMeServices(maxAge))
+				.rememberMeServices(new SpringSessionRememberMeServices())
 			.and()
 				.logout()
 				.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
@@ -85,6 +85,7 @@ public class SsoLoginApplication {
 		public CookieSerializer cookieSerializer(){
 			DefaultCookieSerializer serializer = new DefaultCookieSerializer();
 			serializer.setCookieMaxAge(maxAge);
+			serializer.setRememberMeRequestAttribute(SpringSessionRememberMeServices.REMEMBER_ME_LOGIN_ATTR);
 			return serializer;
 		}
 		
@@ -102,7 +103,7 @@ public class SsoLoginApplication {
 		
 		@Bean
 		public ConfirmSessionFilter confirmSessionFilter() {
-		  ConfirmSessionFilter confirmSessionFilter =new ConfirmSessionFilter(ssoServerSettings());
+		  ConfirmSessionFilter confirmSessionFilter = new ConfirmSessionFilter(ssoServerSettings());
 		  confirmSessionFilter.setValiditySeconds(maxAge);
 		  return confirmSessionFilter;
 		}

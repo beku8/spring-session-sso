@@ -83,8 +83,9 @@ public class Client1Application {
 		protected void configure(HttpSecurity http) throws Exception {
 			http
 			.addFilterBefore(ssoClientLoginCallbackFilter(), WebAsyncManagerIntegrationFilter.class)
-			.addFilterAfter(ssoClientLoginFilter(), SsoClientLoginCallbackFilter.class)
-			.addFilterAfter(ssoClientSessionCheckFilter(), AnonymousAuthenticationFilter.class)
+			.addFilterAfter(ssoClientSessionCheckFilter(), SsoClientLoginCallbackFilter.class)
+			.addFilterAfter(ssoClientLoginFilter(), SsoClientSessionCheckFilter.class)
+			
 			.authorizeRequests()
 				.antMatchers("/free").permitAll()
 				.anyRequest().hasAnyRole("USER")

@@ -11,7 +11,6 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class SsoClientSessionCheckFilter extends OncePerRequestFilter {
@@ -23,17 +22,22 @@ public class SsoClientSessionCheckFilter extends OncePerRequestFilter {
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
       throws ServletException, IOException {
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    HttpSession session = request.getSession(true);
-    if ("anonymousUser".equals(securityContext.getAuthentication().getPrincipal())) {
+ // login uri should be in external configuration.
+    String loginUri = "http://localhost:8080"; 
+    
+    HttpSession session = request.getSession(false);
+    if (session != null) {
+      logger.debug("session maxInactiveInterval {}", session.getMaxInactiveInterval());
+      SecurityContext securityContext = (SecurityContext) session.getAttribute("SPRING_SECURITY_CONTEXT");
       Boolean sessionConfirmed = (Boolean) session.getAttribute(SESSION_SYNCHRONIZED);
-      if (sessionConfirmed == null || !sessionConfirmed) {
+      if (securityContext == null && (sessionConfirmed == null || !sessionConfirmed)) {
         logger.debug("Synchronizing anonymous user session {}", session.getId());
-        // login uri should be in external configuration.
-        String loginUri = "http://localhost:8080"; 
         SsoRedirection.redirectConfirmSession(request, response, loginUri);
         return;
       }
+    } else {
+      SsoRedirection.redirectConfirmSession(request, response, loginUri);
+      return;
     }
     chain.doFilter(request, response);
   }

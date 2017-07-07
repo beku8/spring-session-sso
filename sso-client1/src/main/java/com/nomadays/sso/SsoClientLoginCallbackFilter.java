@@ -17,6 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -109,6 +110,12 @@ public class SsoClientLoginCallbackFilter extends OncePerRequestFilter {
         String targetUrl = request.getParameter("redirect");
         logger.debug("redirecting to original url {}", targetUrl);
         redirectStrategy.sendRedirect(request, response, targetUrl);
+        
+        HttpSession currentSession = request.getSession(false);
+        if (currentSession != null) {
+          logger.debug("deleting current session {}", currentSession.getId());
+          sessionRepository.delete(currentSession.getId());
+        }
         return false;
       }
     }
